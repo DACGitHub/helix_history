@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <link rel="stylesheet" href="./assets/style.css"> -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* === Base Reset === */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* === Scroll Container === */
+#timeline-scroll-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  background-color: #f8f9fa;
+}
+
+
+
+/* === Wrapper (dynamically set width) === */
+#timeline-wrapper {
+  position: relative;
+  height: 100vh;
+}
+
+/* === Horizontal Center Line === */
+#timeline-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background-color: #0d6efd;
+  z-index: 0;
+}
+
+/* === Timeline Items === */
+.timeline-item {
+  position: absolute;
+  width: 400px;
+  min-height: 400px;
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: left;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  top: 50%;
+  transform: translate(-50%, var(--initial-offset)) scale(1);
+  transition: transform 0.6s ease-in-out, box-shadow 0.4s ease-in-out;
+}
+
+.summary {
+    color: #928989;
+}
+
+/* Position Offsets */
+.timeline-item.above {
+  --initial-offset: -120%;
+}
+
+.timeline-item.below {
+  --initial-offset: 20%;
+}
+
+/* Image */
+.timeline-item img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+/* Hover Scale */
+.timeline-item:hover {
+  transform: translate(-50%, -50%) scale(1.5);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.35);
+  z-index: 2;
+}
+
+/* Expand Details */
+.timeline-item .details {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+}
+
+.timeline-item:hover .details {
+  max-height: 300px;
+  opacity: 1;
+  margin-top: 0.5rem;
+}
+
+/* === Navigation Arrows === */
+.nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(13, 110, 253, 0.8);
+  color: white;
+  border: none;
+  width: 50px;
+  height: 80px;
+  font-size: 2rem;
+  cursor: pointer;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.nav-arrow:hover {
+  background-color: rgba(13, 110, 253, 1);
+}
+
+.nav-arrow.left {
+  left: 10px;
+}
+
+.nav-arrow.right {
+  right: 10px;
+}
+
+
+    </style>
+    <title>Helix History</title>
+</head>
+
+<body>
+
+    <div id="timeline-scroll-container">
+        <button id="scroll-left" class="nav-arrow left">&larr;</button>
+        <div id="timeline-wrapper"></div>
+        <button id="scroll-right" class="nav-arrow right">&rarr;</button>
+    </div>
+
+    <script>
+        
+        const timelineData = [
+            {
+                businessUnit: "Well Intervention",
+                year: "1987",
+                description: {
+                    heading: "Pioneering Riserless Intervention",
+                    subheading: "Seawell, originally Stena Seawell, completed the first riserless subsea well intervention campaign in the North Sea for BP, setting a new standard for subsea light well intervention."
+                },
+                image: "01 - Seawell.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "1995",
+                description: {
+                    heading: "First Riserless Christmas Tree Change",
+                    subheading: "Helix performed the first riserless Christmas tree replacement for Hess, demonstrating advanced subsea intervention capabilities."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "1996",
+                description: {
+                    heading: "Uncle John Joins the Fleet",
+                    subheading: "The Uncle John, the world’s first purpose-built semisubmersible dive support vessel, joined the Helix fleet, enhancing our deepwater intervention capabilities."
+                },
+                image: "03 - Uncle John 2.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "1997",
+                description: {
+                    heading: "Uncle John’s First Well Intervention",
+                    subheading: "Uncle John completed its inaugural well intervention project, performing wireline intervention from a dynamically positioned non-drilling vessel for the first time in the Gulf of America."
+                },
+                image: "03 - Uncle John.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "1996",
+                description: {
+                    heading: "First Rig-Alternative High-Pressure Riser Campaign",
+                    subheading: "Helix conducted the first high-pressure riser intervention campaign as a rig alternative for Shell, optimizing efficiency in the Gulf of America."
+                },
+                image: "04a - Seawell.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "1997",
+                description: {
+                    heading: "First Coiled Tubing Campaign from a Monohull",
+                    subheading: "Helix executed the first coiled tubing intervention campaign from a monohull vessel for Shell, advancing operational flexibility."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "1997",
+                description: {
+                    heading: "First Riserless Intervention in Shallow Water",
+                    subheading: "Helix completed the first riserless intervention in 37-meter shallow water in the Southern North Sea for Arco, showcasing versatility in challenging environments."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "1998",
+                description: {
+                    heading: "First Riserless Intervention Through Horizontal Christmas Trees",
+                    subheading: "Helix conducted the first riserless intervention campaign through horizontal Christmas trees for Amoco, a milestone in subsea technology."
+                },
+                image: "04b - Seawell.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "1998",
+                description: {
+                    heading: "First Rig-Alternative Vessel for Well Abandonment",
+                    subheading: "Helix pioneered the use of a rig-alternative vessel for well abandonment for EEX, reducing costs and operational complexity."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2000",
+                description: {
+                    heading: "First Riserless Abandonment Campaign in Norway",
+                    subheading: "Helix completed the first riserless well abandonment campaign in Norway for Statoil, expanding our global reach."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2000",
+                description: {
+                    heading: "First Multi-Operator Riserless Abandonment Campaign",
+                    subheading: "Helix executed a riserless abandonment campaign for multiple operators, including Enterprise, Marathon, Talisman, and BP, optimizing collaboration and efficiency."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2001",
+                description: {
+                    heading: "First Coiled Tubing and Well Test Flaring Campaign",
+                    subheading: "Helix conducted the first coiled tubing and well test flaring campaign from a monohull vessel for Shell, enhancing well enhancement techniques."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2002",
+                description: {
+                    heading: "Q4000 Joins the Fleet",
+                    subheading: "The Q4000, the world’s first deep-sea intervention and construction vessel, joined the Helix fleet, capable of operating in water depths up to 10,000 feet, surpassing the capabilities of Uncle John."
+                },
+                image: "05 - Q4 joins fleet.png"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2003",
+                description: {
+                    heading: "T-750 Subsea Trencher Delivered",
+                    subheading: "Helix introduced the T-750, the first subsea trencher with variable speed drive motors, increasing jetting power by 30% for enhanced trenching efficiency."
+                },
+                image: "05 - T750.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2004",
+                description: {
+                    heading: "First Well Test Package for Hydrate Dissolution",
+                    subheading: "Helix utilized a well test package to dissolve hydrates and flare off pipeline inventory, streamlining subsea operations."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2004",
+                description: {
+                    heading: "First Diverless Riserless Intervention in Norway",
+                    subheading: "Helix completed the first diverless riserless intervention campaign in Norway for Statoil, advancing safety and efficiency."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2004",
+                description: {
+                    heading: "Deepwater High-Pressure Riser Campaign",
+                    subheading: "Helix conducted a high-pressure riser intervention campaign in 3,003-foot water depth for Shell, setting a new benchmark for deepwater operations."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2005",
+                description: {
+                    heading: "First Well Intervention and Abandonment Combo Campaign",
+                    subheading: "Helix performed the first combined well intervention and abandonment campaign using a rig-alternative vessel for Shell, optimizing project execution."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2005",
+                description: {
+                    heading: "First Well Intervention and Well Test Combo Campaign",
+                    subheading: "Helix completed a combined well intervention and well test campaign using a rig-alternative vessel for Kerr McGee, enhancing operational versatility."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2005",
+                description: {
+                    heading: "New Water Depth Record for High-Pressure Riser Campaign",
+                    subheading: "Helix set a water depth record of 5,300 feet for a high-pressure riser intervention campaign for Shell, pushing the boundaries of deepwater technology."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "",
+                year: "2006",
+                description: {
+                    heading: "Listed on the New York Stock Exchange",
+                    subheading: "Helix celebrated becoming a publicly traded company on the New York Stock Exchange."
+                },
+                image: "031 - Listed on NYSE.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2007",
+                description: {
+                    heading: "First Free-Standing Intervention Top Tension Installation",
+                    subheading: "Helix installed the first free-standing intervention top tension system for RPSEA, advancing subsea intervention techniques."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2008",
+                description: {
+                    heading: "Well Enhancer Launched",
+                    subheading: "Helix launched the state-of-the-art Well Enhancer, a light well intervention vessel, in the North Sea, redefining subsea intervention standards."
+                },
+                image: "06 - Well Enhancer Launched.png"
+            },
+            {
+                businessUnit: "Production Facilities",
+                year: "2008",
+                description: {
+                    heading: "Helix Producer I Joins the Fleet",
+                    subheading: "The Helix Producer I, a ship-shaped monohull floating production and offloading vessel converted from the ferry MV Karl Carstens, joined the Helix fleet."
+                },
+                image: "07 - HP1.png"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2008",
+                description: {
+                    heading: "i-Trencher System Delivered",
+                    subheading: "Helix introduced the i-Trencher, designed to trench up to two meters in a single pass in cohesive soils, capable of operating in 1,000-meter water depths."
+                },
+                image: "08-itrencher.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2009",
+                description: {
+                    heading: "First Top Hole Drilling with Rig-Alternative Vessel",
+                    subheading: "Helix performed top hole drilling using a rig-alternative vessel for Chevron, expanding the scope of intervention vessels."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2009",
+                description: {
+                    heading: "First Riserless Intervention with 7 3/8” Well Access Package",
+                    subheading: "Helix completed a riserless intervention campaign using a 7 3/8” well access package for Nexen, enhancing access to complex wells."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2009",
+                description: {
+                    heading: "First Well Sidetrack Preparation",
+                    subheading: "Helix prepared a well for sidetracking using a rig-alternative vessel for Shell, optimizing well redevelopment."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2009",
+                description: {
+                    heading: "First Thru-Tubing Gravel Pack Recompletion",
+                    subheading: "Helix performed the first thru-tubing gravel pack recompletion using a rig-alternative vessel for Marubeni, advancing well completion techniques."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2010",
+                description: {
+                    heading: "Macondo Spill Response",
+                    subheading: "The Q4000 played a critical role in the Macondo well “static kill” for BP, pumping 32,000 barrels of mud and cement to seal the leak. Helix’s Express and Helix Producer I also supported spill response and containment."
+                },
+                image: "010-Macondo.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2010",
+                description: {
+                    heading: "First Pipeline Clean-Out from a Monohull Vessel",
+                    subheading: "Helix’s Seawell and Well Enhancer, the only industry-qualified vessels, performed a pipeline clean-out for Shell to meet legislative requirements."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2010",
+                description: {
+                    heading: "First Coiled Tubing for Well Enhancement",
+                    subheading: "Helix used coiled tubing from a monohull vessel for well enhancement for Hess, improving production efficiency."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2010",
+                description: {
+                    heading: "First Dedicated Emergency Response Vessel",
+                    subheading: "Helix introduced the Helix Fast Response System, the first dedicated emergency response vessel for well flow handling, processing, and offloading."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2010",
+                description: {
+                    heading: "First Coiled Tubing Drilling for Well Abandonment",
+                    subheading: "Helix used coiled tubing drilling to remove a top plug during well abandonment for Noble Energy, streamlining decommissioning."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2011",
+                description: {
+                    heading: "First Riserless Intervention in West Africa",
+                    subheading: "Helix completed the first riserless intervention campaign in West Africa for ExxonMobil, expanding our global footprint."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2012",
+                description: {
+                    heading: "First High-Pressure Riser Coiled Tubing Gravel Pack",
+                    subheading: "Helix performed the first high-pressure riser-based coiled tubing gravel pack operation using a rig-alternative vessel for Marubeni."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2012",
+                description: {
+                    heading: "T1200 Jet Trencher Delivered",
+                    subheading: "Helix introduced the T1200, a second-generation 1,200-horsepower jet trencher, capable of burying products in 3,000-meter water depths."
+                },
+                image: "011-T1200 Trencher.png"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2012",
+                description: {
+                    heading: "Grand Canyon Joins the Fleet",
+                    subheading: "The Grand Canyon, a purpose-built DP3 trenching support vessel equipped with the T1200, iTrencher, two 200-horsepower ROVs, and a 250-tonne crane, joined the Helix fleet."
+                },
+                image: "012-grand canyon.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2013",
+                description: {
+                    heading: "Skandi Constructor Joins the Fleet",
+                    subheading: "The Skandi Constructor, a versatile subsea support vessel, joined the Helix fleet, enhancing our operational capabilities."
+                },
+                image: "013-skandi con-structor.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2014",
+                description: {
+                    heading: "Helix 534 Joins the Fleet",
+                    subheading: "Helix acquired and converted the drillship Discoverer 534 into the Helix 534, a 534-foot well intervention vessel, expanding our intervention fleet."
+                },
+                image: "014-Helix 534.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2014",
+                description: {
+                    heading: "First Deepwater Riserless Intervention in the Region",
+                    subheading: "Helix completed a riserless intervention campaign in 752-meter water depth for ExxonMobil, marking a regional milestone."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2014",
+                description: {
+                    heading: "First Riserless Intervention and Stimulation Combo",
+                    subheading: "Helix performed a riserless intervention and stimulation campaign at a 50-barrels-per-minute rate for BP, optimizing well performance."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2014",
+                description: {
+                    heading: "T1500 Jet Trencher Delivered",
+                    subheading: "Helix introduced the T-1500, a third-generation 1,500-horsepower jet trencher, capable of burying products in 1,000-meter water depths."
+                },
+                image: "015-T1500.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2015",
+                description: {
+                    heading: "Q5000 Joins the Fleet",
+                    subheading: "The Q5000, a state-of-the-art well intervention semisubmersible, joined the Helix fleet, enhancing deepwater intervention capabilities."
+                },
+                image: "016-Helix Q5000.png"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2015",
+                description: {
+                    heading: "Grand Canyon II Delivered",
+                    subheading: "The Grand Canyon II, equipped for light construction with two 200-horsepower Gen 3 UHD ROVs, joined the Helix fleet."
+                },
+                image: "017-Grand Canyon II.png"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2015",
+                description: {
+                    heading: "Grand Canyon III Delivered",
+                    subheading: "The Grand Canyon III, a versatile subsea support vessel, joined the Helix fleet, expanding our robotics capabilities."
+                },
+                image: "018-Grand Canyon III.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2016",
+                description: {
+                    heading: "Seawell Relaunched After Upgrade",
+                    subheading: "The Seawell was relaunched following a $75 million upgrade, enhancing its capabilities for well intervention and decommissioning."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2016",
+                description: {
+                    heading: "Siem Helix 1 Joins the Fleet",
+                    subheading: "The Siem Helix 1, a purpose-built well intervention vessel, joined the Helix fleet, strengthening our global intervention services."
+                },
+                image: "019-Siem Helix 1.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2017",
+                description: {
+                    heading: "Siem Helix 2 Joins the Fleet",
+                    subheading: "The Siem Helix 2, a state-of-the-art well intervention vessel, joined the Helix fleet, expanding our operational capacity."
+                },
+                image: "020-Siem Helix 2.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2019",
+                description: {
+                    heading: "Newbuild Q7000 Delivered",
+                    subheading: "The Q7000, a newbuild well intervention semisubmersible, was delivered to Helix, designed for advanced deepwater operations."
+                },
+                image: "021-q7000 joins.png"
+            },
+            {
+                businessUnit: "",
+                year: "2019",
+                description: {
+                    heading: "Acquisition of Subsea Technologies Group",
+                    subheading: "Helix acquired a majority stake in Subsea Technologies Group Limited, an Aberdeen-based subsea engineering firm specializing in pressure control equipment."
+                },
+                image: "022-STL acquisition.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2020",
+                description: {
+                    heading: "Q7000’s First Project Offshore Nigeria",
+                    subheading: "The Q7000 completed its first well intervention project offshore Nigeria for ExxonMobil, marking a successful debut."
+                },
+                image: "023 - Q7000 first.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2020",
+                description: {
+                    heading: "World Record for Offshore Snubbing",
+                    subheading: "Helix and SBS Energy set a world record for offshore snubbing, completing a 28,789-foot flowline cleanout on the Q4000 at Ozona Garden Banks 515 in the U.S. Gulf of America."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2021",
+                description: {
+                    heading: "15 Years on the NYSE",
+                    subheading: "Helix celebrated 15 years as a publicly traded company on the New York Stock Exchange, reflecting our growth and stability."
+                },
+                image: "024 - HLX 15 year NYSE.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2021",
+                description: {
+                    heading: "Partnership with Trendsetter Engineering",
+                    subheading: "Helix partnered with Trendsetter Engineering to provide global integrated hydraulic intervention services, enhancing our service offerings."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Production Facilities",
+                year: "2021",
+                description: {
+                    heading: "New Agreement with HWCG Consortium",
+                    subheading: "Helix entered a new agreement with the HWCG consortium for response resources, strengthening our spill response capabilities."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2022",
+                description: {
+                    heading: "Siem Helix 1 Multi-Year Contract",
+                    subheading: "The Siem Helix 1 secured a multi-year contract for well abandonment with Trident, reinforcing our decommissioning expertise."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2022",
+                description: {
+                    heading: "Siem Helix 2 Contract Extension",
+                    subheading: "The Siem Helix 2 was awarded a multi-year well services extension with Petrobras, expanding our operations in Brazil."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2022",
+                description: {
+                    heading: "Q5000 Multi-Year Contract",
+                    subheading: "The Q5000 secured a multi-year contract with Shell in the U.S. Gulf of America, solidifying our partnership."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2022",
+                description: {
+                    heading: "Robotics Decommissioning in Thailand",
+                    subheading: "Helix Robotics Solutions was awarded a 180-day decommissioning contract offshore Thailand, utilizing the Grand Canyon II for subsea construction."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2022",
+                description: {
+                    heading: "Boulder Relocation for Offshore Wind",
+                    subheading: "Helix Robotics relocated over 50,000 boulders for seabed preparation in offshore wind and interconnector projects, supporting renewable energy."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2022",
+                description: {
+                    heading: "Sheila Bordelon Chartered",
+                    subheading: "Helix Robotics Solutions chartered the Jones Act-compliant vessel Sheila Bordelon, enhancing our U.S. operations."
+                },
+                image: "025 - Shelia Bordelon.png"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2022",
+                description: {
+                    heading: "North Sea Enabler Joins the Fleet",
+                    subheading: "The North Sea Enabler (previously Horizon North Sea), a light construction support vessel, joined the Helix fleet, bolstering our robotics capabilities."
+                },
+                image: "026 - North Sea Enabler.png"
+            },
+            {
+                businessUnit: "Shallow Water Abandonment",
+                year: "2022",
+                description: {
+                    heading: "Acquisition of Alliance Group of Companies",
+                    subheading: "Helix acquired Alliance group of companies, expanding our shallow water abandonment capabilities in the U.S. Gulf of America. Alliance was a Louisiana-based privately held company that provides services in support of the upstream and midstream industries in the Gulf of America shelf, including offshore oil field decommissioning and reclamation, project management, engineered solutions, intervention, maintenance, repair, heavy lift, and commercial diving services."
+                },
+                image: "027 - Alliance Acquisition.png"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2023",
+                description: {
+                    heading: "Q7000 Well Abandonment Campaign",
+                    subheading: "The Q7000 was awarded a well abandonment campaign with multiple clients offshore New Zealand and Australia, showcasing global expertise."
+                },
+                image: "028 - Q7000 Australia.png"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2023",
+                description: {
+                    heading: "Glomar Wave Long-Term Charter",
+                    subheading: "Helix Robotics Solutions signed a long-term charter for the Glomar Wave, enhancing our subsea support capabilities."
+                },
+                image: "029 - Glomar Wave.png"
+            },
+            {
+                businessUnit: "Shallow Water Abandonment",
+                year: "2023",
+                description: {
+                    heading: "39-Well Decommissioning Contract",
+                    subheading: "Helix Alliance secured a 39-well decommissioning contract in the U.S. Gulf of America, utilizing the EPIC Hedron, liftboats, Triton Explorer, and multiple OSVs for plug and abandonment, pipeline, and structure removals."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2024",
+                description: {
+                    heading: "Q4000 Well Intervention in Nigeria",
+                    subheading: "The Q4000 secured a six-month well intervention contract offshore Nigeria with Esso, reinforcing our deepwater expertise."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2024",
+                description: {
+                    heading: "UXO Services Contract Offshore Scotland",
+                    subheading: "Helix Robotics Solutions was awarded a contract by SSEN Transmission for unexploded ordnance target investigation services for the Eastern Green Link 2 subsea cable project."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2024",
+                description: {
+                    heading: "Expanded Renewables Capabilities",
+                    subheading: "Helix Robotics Solutions expanded its offshore site clearance services to include explosive ordnance disposal, strengthening our renewables offerings."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2024",
+                description: {
+                    heading: "Trym Joins the Fleet",
+                    subheading: "The Trym, a versatile subsea support vessel, joined the Helix Robotics fleet, enhancing our operational flexibility."
+                },
+                image: "030 - TRYM fleet.png"
+            },
+            {
+                businessUnit: "Robotics",
+                year: "2025",
+                description: {
+                    heading: "T1400-2 Trencher’s First Major Contract",
+                    subheading: "Helix’s T1400-2 subsea trencher, paired with a work-class ROV, was awarded a contract by Prysmian to trench over 180 km of cable in the Mediterranean and North Seas."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2025",
+                description: {
+                    heading: "Siem Helix 1 Contract Extension",
+                    subheading: "The Siem Helix 1 secured a multi-year contract extension with Petrobras, continuing our strong presence in Brazil."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2025",
+                description: {
+                    heading: "Q7000 Abandonment Campaign in Brazil",
+                    subheading: "The Q7000 was awarded a well abandonment campaign in Brazil with Shell Brazil, expanding our decommissioning services."
+                },
+                image: "helix.jpg"
+            },
+            {
+                businessUnit: "Well Intervention",
+                year: "2025",
+                description: {
+                    heading: "Multi-Year Contract Extension with Shell",
+                    subheading: "Helix secured a multi-year contract extension with Shell in the U.S. Gulf of America, reinforcing our long-term partnership."
+                },
+                image: "helix.jpg"
+            }
+        ];
+
+        const wrapper = document.getElementById("timeline-wrapper");
+        const itemWidth = 250;
+        const gap = 50;
+        const startOffset = 400;
+
+        timelineData.forEach((event, index) => {
+            const item = document.createElement("div");
+            const position = index % 2 === 0 ? "above" : "below";
+            const left = startOffset + index * (itemWidth + gap);
+
+
+
+            item.className = `timeline-item ${position}`;
+            item.style.left = `${left}px`;
+
+            if (index === 0) {
+                item.classList.add("first");
+            }
+
+            item.innerHTML = `
+        <img src="${event.image}" alt="${event.description.heading}" />
+        <h4>${event.year}</h4>
+        <strong class="summary">${event.description.heading}</strong>
+        <div class="details">${event.description.subheading}</div>
+      `;
+
+            wrapper.appendChild(item);
+        });
+
+        // Set wrapper width dynamically
+        const totalWidth = startOffset + timelineData.length * (itemWidth + gap);
+        wrapper.style.width = `${totalWidth}px`;
+
+        const scrollContainer = document.getElementById('timeline-scroll-container');
+        const scrollLeftBtn = document.getElementById('scroll-left');
+        const scrollRightBtn = document.getElementById('scroll-right');
+        const scrollAmount = 800;
+
+        scrollLeftBtn.addEventListener('click', () => {
+            scrollContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        });
+
+        scrollRightBtn.addEventListener('click', () => {
+            scrollContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        });
+
+        // Enable drag-to-scroll on #timeline-scroll-container
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        const container = document.getElementById('timeline-scroll-container');
+
+        container.addEventListener('mousedown', (e) => {
+            isDown = true;
+            container.classList.add('dragging');
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+        });
+
+        container.addEventListener('mouseleave', () => {
+            isDown = false;
+            container.classList.remove('dragging');
+        });
+
+        container.addEventListener('mouseup', () => {
+            isDown = false;
+            container.classList.remove('dragging');
+        });
+
+        container.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const walk = (x - startX) * 1.5; // speed multiplier
+            container.scrollLeft = scrollLeft - walk;
+        });
+
+        // Touch support
+        container.addEventListener('touchstart', (e) => {
+            isDown = true;
+            startX = e.touches[0].pageX;
+            scrollLeft = container.scrollLeft;
+        });
+
+        container.addEventListener('touchend', () => {
+            isDown = false;
+        });
+
+        container.addEventListener('touchmove', (e) => {
+            if (!isDown) return;
+            const x = e.touches[0].pageX;
+            const walk = (x - startX) * 1.5;
+            container.scrollLeft = scrollLeft - walk;
+        });
+
+        
+        
+    </script>
+
+
+</body>
+
+</html>
+
+How does this code go inot a expression engine template?
